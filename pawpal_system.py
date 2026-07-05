@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 
 @dataclass
@@ -26,6 +26,14 @@ class Task:
     def is_due_today(self) -> bool:
         """Checks if the task is scheduled to be performed today."""
         return self.due_date == date.today()
+
+    def advance_due_date(self) -> None:
+        """Advances the due_date forward based on recurrence and resets completed flag."""
+        if self.recurrence == "daily":
+            self.due_date = self.due_date + timedelta(days=1)
+        elif self.recurrence == "weekly":
+            self.due_date = self.due_date + timedelta(weeks=1)
+        self.completed = False
 
     def get_priority_value(self) -> int:
         """Gets the numeric value corresponding to the task's priority level."""
@@ -92,9 +100,18 @@ class Scheduler:
         self.skipped_tasks: list[Task] = []
 
     def generate_plan(self) -> list[Task]:
-        """Generates the daily plan of tasks that fit within the available time constraint."""
+        """Generates the daily plan of tasks that fit within the available time constraint.
+
+        Steps:
+        1. Collect tasks from the relevant pet(s).
+        2. Sort by priority (desc) then time (asc).
+        3. Greedily schedule tasks that fit in remaining owner time.
+        4. Advance due dates for completed recurring tasks.
+        5. Detect and store time-slot conflicts.
+        """
         self.scheduled_tasks = []
         self.skipped_tasks = []
+        self.conflicts: list[tuple[Task, Task]] = []
         total_time = 0
         limit = self.owner.available_minutes
 
@@ -111,15 +128,58 @@ class Scheduler:
                     total_time += task.duration_minutes
                 else:
                     self.skipped_tasks.append(task)
+
+        self.handle_recurring_tasks()
+        self.conflicts = self.detect_conflicts()
         return self.scheduled_tasks
 
     def sort_tasks(self, tasks: list[Task]) -> list[Task]:
-        """Sorts a list of tasks by priority descending."""
-        return sorted(tasks, key=lambda t: t.get_priority_value(), reverse=True)
+        """Sorts tasks by priority (descending), then by scheduled time (ascending)."""
+        return sorted(tasks, key=lambda t: (-t.get_priority_value(), t.time))
 
     def filter_by_time(self, tasks: list[Task]) -> list[Task]:
         """Filters tasks to only include those that fit within available time."""
         return [t for t in tasks if t.duration_minutes <= self.owner.available_minutes]
+
+    def filter_by_pet(self, pet_name: str) -> list[Task]:
+        """Returns all scheduled tasks belonging to the named pet."""
+        for pet in self.owner.get_pets():
+            if pet.name.lower() == pet_name.lower():
+                return [t for t in self.scheduled_tasks if t in pet.get_tasks()]
+        return []
+
+    def filter_by_status(self, completed: bool) -> list[Task]:
+        """Returns scheduled tasks filtered by completion status."""
+        return [t for t in self.scheduled_tasks if t.completed == completed]
+
+    def handle_recurring_tasks(self) -> None:
+        """Advances due dates for completed recurring tasks so they stay schedulable."""
+        all_tasks = self.owner.get_all_tasks()
+        for task in all_tasks:
+            if task.recurrence != "none" and task.completed and task.due_date is not None:
+                if task.due_date <= date.today():
+                    task.advance_due_date()
+
+    def detect_conflicts(self) -> list[tuple[Task, Task]]:
+        """Detects time-slot conflicts among scheduled tasks.
+
+        A conflict occurs when task A starts before task B but A's end time
+        (start + duration) exceeds B's start time.
+        Returns a list of (task_a, task_b) conflict pairs.
+        """
+        conflicts: list[tuple[Task, Task]] = []
+        sorted_by_time = sorted(self.scheduled_tasks, key=lambda t: t.time)
+        for i, task_a in enumerate(sorted_by_time):
+            for task_b in sorted_by_time[i + 1:]:
+                # Parse HH:MM into total minutes for arithmetic
+                a_h, a_m = map(int, task_a.time.split(":"))
+                b_h, b_m = map(int, task_b.time.split(":"))
+                a_start = a_h * 60 + a_m
+                b_start = b_h * 60 + b_m
+                a_end = a_start + task_a.duration_minutes
+                if a_start == b_start or a_end > b_start:
+                    conflicts.append((task_a, task_b))
+        return conflicts
 
     def get_pet_for_task(self, task: Task) -> str:
         """Finds and returns the name of the pet associated with a task."""
@@ -133,12 +193,22 @@ class Scheduler:
         lines = [f"Daily plan for {self.owner.name}'s pets on {self.date}:"]
         if not self.scheduled_tasks:
             lines.append("  No tasks scheduled.")
-        for task in self.scheduled_tasks:
+
+        # Print tasks in chronological order
+        for task in sorted(self.scheduled_tasks, key=lambda t: t.time):
             pet_name = self.get_pet_for_task(task)
             lines.append(f"  {task.time} — {task.name} ({task.duration_minutes} min) [priority: {task.priority}] for {pet_name}")
+
         if self.skipped_tasks:
             lines.append("\nSkipped tasks due to time limits:")
             for task in self.skipped_tasks:
                 pet_name = self.get_pet_for_task(task)
                 lines.append(f"  * {task.name} ({task.duration_minutes} min) [priority: {task.priority}] for {pet_name}")
+
+        conflicts = getattr(self, "conflicts", [])
+        if conflicts:
+            lines.append("\n⚠️  TIME CONFLICTS DETECTED:")
+            for task_a, task_b in conflicts:
+                lines.append(f"  ⚡ '{task_a.name}' ({task_a.time}, {task_a.duration_minutes} min) overlaps with '{task_b.name}' ({task_b.time})")
+
         return "\n".join(lines)
