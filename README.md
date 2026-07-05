@@ -61,12 +61,16 @@ Skipped tasks due to time limits:
 
 ## 🧪 Testing PawPal+
 
+The PawPal+ automated test suite covers the following core behaviors:
+- **Task completion & additions**: Verifies task status updates and adding tasks to pets.
+- **Smarter scheduling constraints**: Verifies priority sorting (High -> Medium -> Low), time budget limits, skipped tasks, and ensuring completed tasks are skipped.
+- **Sorting correctness**: Asserts that tasks of the same priority are ordered chronologically by scheduled time.
+- **Recurrence logic**: Verifies that marking a daily recurring task complete automatically spawns the next occurrence for the following day.
+- **Conflict detection**: Confirms that overlapping schedules and duplicate times are correctly flagged as conflicts.
+
 ```bash
 # Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python3 -m pytest
 ```
 
 Sample test output:
@@ -76,12 +80,17 @@ Sample test output:
 platform darwin -- Python 3.14.3, pytest-9.1.1, pluggy-1.6.0
 rootdir: /Users/agentv/Projects/studysessions/AI110/pawpal-starter
 plugins: anyio-4.14.0
-collected 5 items
+collected 8 items
 
-tests/test_pawpal.py .....                                                                         [100%]
+tests/test_pawpal.py ........                                                                      [100%]
 
-=========================================== 5 passed in 0.02s ============================================
+=========================================== 8 passed in 0.01s ============================================
 ```
+
+### Confidence Level
+**Confidence Level:** ⭐⭐⭐⭐⭐ (5/5 stars)
+
+**Rationale:** The automated test suite now covers all primary scheduling constraints, priority-based sorting, chronological tie-breaking, daily task recurrence spawning, and overlapping conflict detection. With 100% of these critical happy paths and edge cases fully verified and passing in the test suite, we can highly rely on the system's scheduling logic.
 
 ## 📐 Smarter Scheduling
 

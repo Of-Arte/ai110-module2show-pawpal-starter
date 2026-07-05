@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from pawpal_system import Task, Pet, Owner, Scheduler
 
 def test_task_completion():
@@ -109,3 +110,86 @@ def test_scheduler_skips_completed_tasks():
     assert plan[0] == incomplete_task
     assert completed_task not in plan
     assert completed_task not in scheduler.skipped_tasks
+
+def test_scheduler_sorting_chronological():
+    # Arrange: Create tasks with the SAME priority but different times
+    owner = Owner(name="Jordan", available_minutes=120)
+    pet = Pet(name="Mochi", species="Dog", breed="Golden Retriever", age=3)
+    owner.add_pet(pet)
+
+    task_late = Task(name="Late Walk", category="Exercise", duration_minutes=30, priority="high", recurrence="none", time="17:00")
+    task_early = Task(name="Early Meds", category="Health", duration_minutes=5, priority="high", recurrence="none", time="08:00")
+    task_mid = Task(name="Lunch Feed", category="Feeding", duration_minutes=10, priority="high", recurrence="none", time="12:00")
+
+    pet.add_task(task_late)
+    pet.add_task(task_early)
+    pet.add_task(task_mid)
+
+    scheduler = Scheduler(owner=owner)
+
+    # Act: Generate plan
+    plan = scheduler.generate_plan()
+
+    # Assert: All tasks are high priority, so they should be sorted chronologically by time
+    assert len(plan) == 3
+    assert plan[0] == task_early
+    assert plan[1] == task_mid
+    assert plan[2] == task_late
+
+def test_recurrence_logic_daily_task():
+    # Arrange: Create a pet and add a daily recurring task due today
+    pet = Pet(name="Mochi", species="Dog", breed="Golden Retriever", age=3)
+    today = date.today()
+    task = Task(
+        name="Daily Walk",
+        category="Exercise",
+        duration_minutes=30,
+        priority="high",
+        recurrence="daily",
+        due_date=today
+    )
+    pet.add_task(task)
+    assert len(pet.get_tasks()) == 1
+
+    # Act: Mark the task complete
+    success = pet.mark_task_complete("Daily Walk")
+
+    # Assert: Verify completion and spawning of the next daily task
+    assert success
+    tasks = pet.get_tasks()
+    assert len(tasks) == 2
+    
+    # Original task should be completed
+    assert tasks[0].completed
+    assert tasks[0].due_date == today
+
+    # New task should be scheduled for tomorrow and incomplete
+    tomorrow = today + timedelta(days=1)
+    assert not tasks[1].completed
+    assert tasks[1].due_date == tomorrow
+    assert tasks[1].name == "Daily Walk"
+    assert tasks[1].recurrence == "daily"
+
+def test_scheduler_conflict_duplicate_times():
+    # Arrange: Create two tasks scheduled at the exact same time
+    owner = Owner(name="Jordan", available_minutes=120)
+    pet = Pet(name="Mochi", species="Dog", breed="Golden Retriever", age=3)
+    owner.add_pet(pet)
+
+    task1 = Task(name="Morning Feeding", category="Feeding", duration_minutes=15, priority="high", recurrence="none", time="08:00")
+    task2 = Task(name="Morning Meds", category="Health", duration_minutes=5, priority="high", recurrence="none", time="08:00")
+
+    pet.add_task(task1)
+    pet.add_task(task2)
+
+    scheduler = Scheduler(owner=owner)
+
+    # Act: Generate plan (both should fit in 120 minutes)
+    plan = scheduler.generate_plan()
+
+    # Assert: Both are scheduled, and a conflict is detected
+    assert len(plan) == 2
+    assert len(scheduler.conflicts) == 1
+    # Verify that the two tasks are indeed the ones in conflict
+    conflict = scheduler.conflicts[0]
+    assert (task1 in conflict) and (task2 in conflict)
