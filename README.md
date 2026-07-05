@@ -72,19 +72,25 @@ pytest --cov
 Sample test output:
 
 ```
-# Paste your pytest output here
+========================================== test session starts ===========================================
+platform darwin -- Python 3.14.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/agentv/Projects/studysessions/AI110/pawpal-starter
+plugins: anyio-4.14.0
+collected 5 items
+
+tests/test_pawpal.py .....                                                                         [100%]
+
+=========================================== 5 passed in 0.02s ============================================
 ```
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
-| Feature           | Method(s) | Notes                             |
-| ----------------- | --------- | --------------------------------- |
-| Task sorting      |           | e.g., by priority, duration       |
-| Filtering         |           | e.g., skip tasks if time runs out |
-| Conflict handling |           | e.g., overlapping time slots      |
-| Recurring tasks   |           | e.g., daily vs. weekly            |
+| Feature           | Method(s)                    | Notes                                                                       |
+| ----------------- | ---------------------------- | --------------------------------------------------------------------------- |
+| Task sorting      | `Scheduler.sort_tasks()`     | Sorts tasks by priority descending (high=3, medium=2, low=1)                |
+| Filtering         | `Scheduler.filter_by_time()` | Skips tasks whose duration exceeds the owner's remaining time budget        |
+| Conflict handling | `Scheduler.generate_plan()`  | Tasks that exceed the time limit are placed in `skipped_tasks`              |
+| Recurring tasks   | `Task.recurrence`            | Tasks store a `recurrence` field ("daily", "weekly", "none") for future use |
 
 ## 📸 Demo Walkthrough
 
