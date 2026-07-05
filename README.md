@@ -47,26 +47,49 @@ pip install -r requirements.txt
 ```
 ============================================================
 📅 TODAY'S SCHEDULE FOR JORDAN'S PETS
-Total Available Owner Time: 90 minutes
+Total Available Owner Time: 120 minutes
 ============================================================
-Daily plan for Jordan's pets on 2026-07-04:
+Daily plan for Jordan's pets on 2026-07-05:
   08:00 — Morning Walk (30 min) [priority: high] for Mochi
+  08:15 — Playtime (20 min) [priority: medium] for Mochi
   09:00 — Breakfast Feeding (15 min) [priority: high] for Biscuit
+  14:00 — Grooming Session (45 min) [priority: medium] for Mochi
   20:00 — Medication (10 min) [priority: high] for Biscuit
 
 Skipped tasks due to time limits:
-  * Grooming Session (45 min) [priority: medium] for Mochi
+  * Evening Brush (10 min) [priority: low] for Mochi
+
+⚠️  TIME CONFLICTS DETECTED:
+  ⚡ 'Morning Walk' (08:00, 30 min) overlaps with 'Playtime' (08:15)
+============================================================
+
+🐾  Filter: Mochi's scheduled tasks only
+----------------------------------------
+  08:00 — Morning Walk (30 min)
+  08:15 — Playtime (20 min)
+  14:00 — Grooming Session (45 min)
+
+✅  Filter: Pending (incomplete) tasks across all pets
+----------------------------------------
+  ⏳ 08:00 — Morning Walk
+  ⏳ 08:15 — Playtime
+  ⏳ 09:00 — Breakfast Feeding
+  ⏳ 14:00 — Grooming Session
+  ⏳ 20:00 — Medication
+
+🔄  Recurring task — auto-spawn on complete
+----------------------------------------
+  Before: 1 task(s) named 'Evening Brush'
+    • completed=False, due_date=2026-07-05
+
+  mochi.mark_task_complete('Evening Brush') returned: True
+  After: 2 task(s) named 'Evening Brush'
+    • [✅ completed] due_date=2026-07-05
+    • [⏳ pending] due_date=2026-07-06
 ============================================================
 ```
 
 ## 🧪 Testing PawPal+
-
-The PawPal+ automated test suite covers the following core behaviors:
-- **Task completion & additions**: Verifies task status updates and adding tasks to pets.
-- **Smarter scheduling constraints**: Verifies priority sorting (High -> Medium -> Low), time budget limits, skipped tasks, and ensuring completed tasks are skipped.
-- **Sorting correctness**: Asserts that tasks of the same priority are ordered chronologically by scheduled time.
-- **Recurrence logic**: Verifies that marking a daily recurring task complete automatically spawns the next occurrence for the following day.
-- **Conflict detection**: Confirms that overlapping schedules and duplicate times are correctly flagged as conflicts.
 
 ```bash
 # Run the full test suite:
@@ -88,9 +111,8 @@ tests/test_pawpal.py ........                                                   
 ```
 
 ### Confidence Level
-**Confidence Level:** ⭐⭐⭐⭐⭐ (5/5 stars)
 
-**Rationale:** The automated test suite now covers all primary scheduling constraints, priority-based sorting, chronological tie-breaking, daily task recurrence spawning, and overlapping conflict detection. With 100% of these critical happy paths and edge cases fully verified and passing in the test suite, we can highly rely on the system's scheduling logic.
+**Confidence Level:** ⭐⭐⭐⭐⭐ (5/5 stars)
 
 ## 📐 Smarter Scheduling
 
