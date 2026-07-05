@@ -58,9 +58,9 @@
 **a. What you tested**
 
 - What behaviors did you test?
-- I tested if tasks could be added and removed from pets correctly, if tasks could be sorted by priority and if tasks could be scheduled within the owner's time limit.
+  - I tested if tasks could be added and removed from pets correctly, if tasks could be sorted by priority and if tasks could be scheduled within the owner's time limit.
 - Why were these tests important?
-- These tests ensure that the system is working as expected and that the scheduler follows the same logic that was designed in the UML diagram.
+  - These tests ensure that the system is working as expected and that the scheduler follows the same logic that was designed in the UML diagram.
 
 **b. Confidence**
 
@@ -76,11 +76,14 @@
 **a. What went well**
 
 - What part of this project are you most satisfied with?
+  - I am most satisfied with the testing framework and the fact that I was able to implement a scheduling algorithm that works correctly.
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
+  - If I had another iteration, I would add more features to the smart scheduler, such as connecting it to a calendar app, using a user's existing schedule to determine the best time to walk the dog and to provide reminders for tasks.
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+  - Working on this project helped me understand the tradeoffs between design principles and the ability to meet user's needs.

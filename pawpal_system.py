@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 
 
@@ -19,16 +19,37 @@ class Task:
         if self.due_date is None:
             self.due_date = date.today()
 
-    def mark_complete(self) -> None:
-        """Marks the task as completed."""
+    def mark_complete(self) -> Task | None:
+        """Marks the task as completed and spawns the next occurrence for recurring tasks.
+
+        For "daily" or "weekly" tasks, a new Task instance is created using
+        dataclasses.replace() with:
+          - completed reset to False
+          - due_date advanced by 1 day (daily) or 7 days (weekly)
+
+        The caller (e.g. Pet.mark_task_complete) is responsible for adding
+        the returned task to the appropriate pet.
+
+        Returns:
+            A new Task for the next occurrence if recurring, otherwise None.
+        """
         self.completed = True
+        if self.recurrence == "daily":
+            return replace(self, completed=False, due_date=self.due_date + timedelta(days=1))
+        if self.recurrence == "weekly":
+            return replace(self, completed=False, due_date=self.due_date + timedelta(weeks=1))
+        return None
 
     def is_due_today(self) -> bool:
         """Checks if the task is scheduled to be performed today."""
         return self.due_date == date.today()
 
     def advance_due_date(self) -> None:
-        """Advances the due_date forward based on recurrence and resets completed flag."""
+        """Advances the due_date forward based on recurrence and resets completed flag.
+
+        For daily tasks, advances by 1 day. For weekly tasks, advances by 7 days.
+        Sets completed back to False for the next cycle.
+        """
         if self.recurrence == "daily":
             self.due_date = self.due_date + timedelta(days=1)
         elif self.recurrence == "weekly":
@@ -36,7 +57,11 @@ class Task:
         self.completed = False
 
     def get_priority_value(self) -> int:
-        """Gets the numeric value corresponding to the task's priority level."""
+        """Gets the numeric value corresponding to the task's priority level.
+
+        Returns:
+            int: The numeric value where 3 is high, 2 is medium, and 1 is low.
+        """
         priority_map = {"high": 3, "medium": 2, "low": 1}
         return priority_map.get(self.priority.lower(), 1)
 
@@ -56,6 +81,27 @@ class Pet:
     def remove_task(self, task_name: str) -> None:
         """Removes a task from the pet's list of tasks by name."""
         self.tasks = [t for t in self.tasks if t.name != task_name]
+
+    def mark_task_complete(self, task_name: str) -> bool:
+        """Marks a named task as complete and auto-schedules the next occurrence.
+
+        Finds the first incomplete task matching task_name, calls mark_complete()
+        on it, and — if the task is recurring — appends the returned next-occurrence
+        Task to this pet's task list automatically.
+
+        Args:
+            task_name: The exact name of the task to mark complete.
+
+        Returns:
+            True if the task was found and marked complete, False otherwise.
+        """
+        for task in self.tasks:
+            if task.name == task_name and not task.completed:
+                next_occurrence = task.mark_complete()
+                if next_occurrence is not None:
+                    self.tasks.append(next_occurrence)
+                return True
+        return False
 
     def get_tasks(self) -> list[Task]:
         """Returns the list of tasks associated with this pet."""
@@ -106,8 +152,10 @@ class Scheduler:
         1. Collect tasks from the relevant pet(s).
         2. Sort by priority (desc) then time (asc).
         3. Greedily schedule tasks that fit in remaining owner time.
-        4. Advance due dates for completed recurring tasks.
-        5. Detect and store time-slot conflicts.
+        4. Detect and store time-slot conflicts.
+
+        Note: Recurring task next-occurrences are spawned automatically when
+        Pet.mark_task_complete() is called — not during plan generation.
         """
         self.scheduled_tasks = []
         self.skipped_tasks = []
@@ -129,27 +177,54 @@ class Scheduler:
                 else:
                     self.skipped_tasks.append(task)
 
-        self.handle_recurring_tasks()
         self.conflicts = self.detect_conflicts()
         return self.scheduled_tasks
 
     def sort_tasks(self, tasks: list[Task]) -> list[Task]:
-        """Sorts tasks by priority (descending), then by scheduled time (ascending)."""
+        """Sorts tasks by priority (descending), then by scheduled time (ascending).
+
+        Args:
+            tasks: A list of Task objects to be sorted.
+
+        Returns:
+            list[Task]: The sorted list of tasks.
+        """
         return sorted(tasks, key=lambda t: (-t.get_priority_value(), t.time))
 
     def filter_by_time(self, tasks: list[Task]) -> list[Task]:
-        """Filters tasks to only include those that fit within available time."""
+        """Filters tasks to only include those that fit within available time.
+
+        Args:
+            tasks: A list of Task objects to check.
+
+        Returns:
+            list[Task]: Tasks whose duration is less than or equal to owner's available time.
+        """
         return [t for t in tasks if t.duration_minutes <= self.owner.available_minutes]
 
     def filter_by_pet(self, pet_name: str) -> list[Task]:
-        """Returns all scheduled tasks belonging to the named pet."""
+        """Returns all scheduled tasks belonging to the named pet.
+
+        Args:
+            pet_name: The name of the pet to filter by.
+
+        Returns:
+            list[Task]: Scheduled tasks matching the pet.
+        """
         for pet in self.owner.get_pets():
             if pet.name.lower() == pet_name.lower():
                 return [t for t in self.scheduled_tasks if t in pet.get_tasks()]
         return []
 
     def filter_by_status(self, completed: bool) -> list[Task]:
-        """Returns scheduled tasks filtered by completion status."""
+        """Returns scheduled tasks filtered by completion status.
+
+        Args:
+            completed: True to get completed tasks, False to get pending tasks.
+
+        Returns:
+            list[Task]: Filtered scheduled tasks.
+        """
         return [t for t in self.scheduled_tasks if t.completed == completed]
 
     def handle_recurring_tasks(self) -> None:
@@ -165,7 +240,9 @@ class Scheduler:
 
         A conflict occurs when task A starts before task B but A's end time
         (start + duration) exceeds B's start time.
-        Returns a list of (task_a, task_b) conflict pairs.
+
+        Returns:
+            list[tuple[Task, Task]]: A list of tuples containing conflicting task pairs.
         """
         conflicts: list[tuple[Task, Task]] = []
         sorted_by_time = sorted(self.scheduled_tasks, key=lambda t: t.time)

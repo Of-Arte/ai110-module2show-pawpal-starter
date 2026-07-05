@@ -57,8 +57,8 @@ def main():
         time="08:15",
     )
 
-    # ── DEMO: Recurring task advancement ─────────────────────────────────────
-    # task6 is already marked complete (simulates yesterday's done task)
+    # ── DEMO: Recurring task — auto-spawn on complete ─────────────────────
+    # Add "Evening Brush" as a normal pending daily task
     task6 = Task(
         name="Evening Brush",
         category="Grooming",
@@ -66,13 +66,12 @@ def main():
         priority="low",
         recurrence="daily",
         time="19:00",
-        completed=True,
     )
 
     mochi.add_task(task1)   # 08:00 – 08:30
     mochi.add_task(task3)   # 14:00 – 14:45
     mochi.add_task(task5)   # 08:15 – 08:35  ← conflicts with task1
-    mochi.add_task(task6)   # completed recurring task
+    mochi.add_task(task6)   # pending daily task — we'll complete it below
 
     biscuit.add_task(task2)  # 09:00 – 09:15
     biscuit.add_task(task4)  # 20:00 – 20:10
@@ -109,12 +108,23 @@ def main():
     else:
         print("  All tasks completed!")
 
-    # ── DEMO: Recurring task advancement ─────────────────────────────────────
-    print("\n🔄  Recurring task advancement")
+    # ── DEMO: Auto-spawn next occurrence on complete ──────────────────────────
+    print("\n🔄  Recurring task — auto-spawn on complete")
     print("-" * 40)
-    print(f"  'Evening Brush' was completed={task6.completed}, due_date={task6.due_date}")
-    print("  (handle_recurring_tasks() already ran inside generate_plan)")
-    print(f"  → New due_date: {task6.due_date} | completed reset to: {task6.completed}")
+    brush_tasks_before = [t for t in mochi.get_tasks() if t.name == "Evening Brush"]
+    print(f"  Before: {len(brush_tasks_before)} task(s) named 'Evening Brush'")
+    print(f"    • completed={brush_tasks_before[0].completed}, due_date={brush_tasks_before[0].due_date}")
+
+    # Mark it complete — Pet.mark_task_complete() calls task.mark_complete(),
+    # which uses dataclasses.replace() to spawn a new Task for tomorrow
+    success = mochi.mark_task_complete("Evening Brush")
+    print(f"\n  mochi.mark_task_complete('Evening Brush') returned: {success}")
+
+    brush_tasks_after = [t for t in mochi.get_tasks() if t.name == "Evening Brush"]
+    print(f"  After: {len(brush_tasks_after)} task(s) named 'Evening Brush'")
+    for t in brush_tasks_after:
+        status = "✅ completed" if t.completed else "⏳ pending"
+        print(f"    • [{status}] due_date={t.due_date}")
 
     print("=" * 60)
 

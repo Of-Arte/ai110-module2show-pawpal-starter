@@ -85,12 +85,12 @@ tests/test_pawpal.py .....                                                      
 
 ## 📐 Smarter Scheduling
 
-| Feature           | Method(s)                    | Notes                                                                       |
-| ----------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| Task sorting      | `Scheduler.sort_tasks()`     | Sorts tasks by priority descending (high=3, medium=2, low=1)                |
-| Filtering         | `Scheduler.filter_by_time()` | Skips tasks whose duration exceeds the owner's remaining time budget        |
-| Conflict handling | `Scheduler.generate_plan()`  | Tasks that exceed the time limit are placed in `skipped_tasks`              |
-| Recurring tasks   | `Task.recurrence`            | Tasks store a `recurrence` field ("daily", "weekly", "none") for future use |
+| Feature               | Method(s)                                                                     | Notes                                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Task sorting**      | `Scheduler.sort_tasks()`                                                      | Sorts tasks by priority descending (high=3, medium=2, low=1) first, and then chronologically by time ascending.           |
+| **Filtering**         | `Scheduler.filter_by_pet()`, `Scheduler.filter_by_status()`                   | `filter_by_pet(pet_name)` retrieves tasks for a specific pet. `filter_by_status(completed)` retrieves done/pending tasks. |
+| **Conflict handling** | `Scheduler.detect_conflicts()`                                                | Compares overlapping durations (start time + duration) chronologically to detect and report conflicts without crashing.   |
+| **Recurring tasks**   | `Task.mark_complete()`, `Pet.mark_task_complete()`, `Task.advance_due_date()` | Bumps `due_date` using `timedelta` (+1 day for daily, +7 days for weekly) and spawns a new instance on complete.          |
 
 ## 📸 Demo Walkthrough
 
