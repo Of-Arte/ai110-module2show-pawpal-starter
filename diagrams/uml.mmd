@@ -1,15 +1,55 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
-
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Owner {
+        +str name
+        +int available_minutes
+        +list~str~ preferences
+        +list~Pet~ _pets
+        +add_pet(pet: Pet) None
+        +remove_pet(pet_name: str) None
+        +get_pets() list~Pet~
+        +get_all_tasks() list~Task~
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +int age
+        +list~Task~ tasks
+        +add_task(task: Task) None
+        +remove_task(task_name: str) None
+        +get_tasks() list~Task~
     }
 
-    ClassName --> AnotherClass : relationship
+    class Task {
+        +str name
+        +str category
+        +int duration_minutes
+        +str priority
+        +str recurrence
+        +str time
+        +bool completed
+        +date due_date
+        +mark_complete() None
+        +is_due_today() bool
+        +get_priority_value() int
+    }
+
+    class Scheduler {
+        +Owner owner
+        +Pet pet
+        +date date
+        +list~Task~ scheduled_tasks
+        +list~Task~ skipped_tasks
+        +generate_plan() list~Task~
+        +sort_tasks(tasks: list~Task~) list~Task~
+        +filter_by_time(tasks: list~Task~) list~Task~
+        +get_pet_for_task(task: Task) str
+        +explain_plan() str
+    }
+
+    Owner "1" --> "*" Pet : owns
+    Pet "1" --> "*" Task : has
+    Scheduler --> Owner : schedules for
+    Scheduler --> Pet : optional specific pet
+    Scheduler ..> Task : reads and orders
