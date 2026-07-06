@@ -18,6 +18,7 @@ classDiagram
         +list~Task~ tasks
         +add_task(task: Task) None
         +remove_task(task_name: str) None
+        +mark_task_complete(task_name: str) bool
         +get_tasks() list~Task~
     }
 
@@ -30,8 +31,9 @@ classDiagram
         +str time
         +bool completed
         +date due_date
-        +mark_complete() None
+        +mark_complete() Task | None
         +is_due_today() bool
+        +advance_due_date() None
         +get_priority_value() int
     }
 
@@ -41,9 +43,14 @@ classDiagram
         +date date
         +list~Task~ scheduled_tasks
         +list~Task~ skipped_tasks
+        +list~tuple~ conflicts
         +generate_plan() list~Task~
         +sort_tasks(tasks: list~Task~) list~Task~
         +filter_by_time(tasks: list~Task~) list~Task~
+        +filter_by_pet(pet_name: str) list~Task~
+        +filter_by_status(completed: bool) list~Task~
+        +handle_recurring_tasks() None
+        +detect_conflicts() list~tuple~
         +get_pet_for_task(task: Task) str
         +explain_plan() str
     }

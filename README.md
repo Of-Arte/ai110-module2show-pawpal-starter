@@ -125,12 +125,21 @@ tests/test_pawpal.py ........                                                   
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+The PawPal+ application features a modern Streamlit interface designed to help pet owners plan and optimize their daily schedules.
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+### 🔄 Example User Workflow
 
-**Screenshot or video** _(optional)_: <!-- Insert a screenshot or link to a demo video here -->
+1. **Load or Setup Profile**: Open the application, and either click **✨ Load Demo Data** in the sidebar to populate the system or manually save a profile with owner name `Jordan` and `120` available minutes.
+2. **Add a Pet**: Under the "Add a Pet" section in the sidebar, input `Mochi`, select `dog`, type `Golden Retriever`, specify age `3`, and click **Add Pet**.
+3. **Schedule a Task**: Under "Schedule a Task", select `Mochi` from the dropdown. Input a task named `Morning Walk` with a duration of `30 minutes`, set priority to `High`, recurrence to `Daily`, time to `08:00`, and click **Add Task**.
+4. **View & Interact**: The main panel instantly displays the metrics dashboard and today's schedule table. Click **Complete** next to a task (such as a daily recurring task like _Evening Brush_). The UI immediately refreshes, marks the current task complete, and auto-spawns a new pending instance for the next occurrence (e.g. tomorrow).
+5. **Filter Results**: Scroll down to "Filter & Analyze Schedule", select `Mochi` from the pet filter, and choose `Completed` from the status filter to see only Mochi's completed tasks.
+
+---
+
+### 🧠 Key Scheduler Behaviors Demonstrated
+
+- **Priority-First Sorting**: The scheduler automatically prioritizes critical tasks. Tasks are ordered by priority, and sorted chronologically within the same priority level.
+- **Greedy Time Constraint Allocation**: Tasks are scheduled in sorted order until the owner's available minutes limit is reached. Any additional tasks are safely placed into the **Skipped Tasks** section.
+- **Conflict Detection Warnings**: The system detects overlapping time windows. For example, if a 30-minute walk starts at `08:00` and playtime starts at `08:15`, the scheduler flags it as a conflict in a prominent warning block without crashing.
+- **Auto-Scheduling Recurrence**: When a daily or weekly task is marked complete, the backend uses `dataclasses.replace()` to duplicate the task template, advance its due date, and automatically add it back to the pet's pending list.
